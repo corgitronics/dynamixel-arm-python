@@ -5,6 +5,7 @@ import time
 import RPi.GPIO as GPIO
 import pyax12.packet as pk
 import pyax12.utils as utils
+import machine as machine
 
 GPIO.setmode(GPIO.BCM)
 
@@ -14,28 +15,6 @@ port = '/dev/ttyACM0'
 baudrate = 1000000
 timeout = 2000
 tx_rx = 18
-
-# Shoulder settings
-shoulder_id = 2
-shoulder_cw = 190
-shoulder_ccw = 810
-shoulder_torque = 150
-shoulder_speed = 400
-
-# Elbow settings
-elbow_id = 3
-elbow_cw = 25
-elbow_ccw = 980
-elbow_torque = 150
-elbow_speed = 500
-
-#Gripper settings
-gripper_id = 4
-gripper_cw = 304
-gripper_ccw = 774
-gripper_torque = 150
-gripper_speed = 200
-
 
 def initConnection():
     return(Connection(port=port,
@@ -94,16 +73,16 @@ def setSpeed(dynamixel_id, speed):
     serial_connection.set_speed(dynamixel_id, speed)
 
 def openGripper():
-    gripper.goto(gripper_ccw)
+    gripper.goto(machine.gripper_ccw)
 
 def closeGripper():
-    gripper.goto(gripper_cw)
+    gripper.goto(machine.gripper_cw)
 
 
 
-shoulder = Servo("Shoulder", shoulder_id, shoulder_cw, shoulder_ccw, shoulder_torque, shoulder_speed)
-elbow = Servo("Elbow", elbow_id, elbow_cw, elbow_ccw, elbow_torque, elbow_speed)
-gripper = Servo('Gripper', gripper_id, gripper_cw, gripper_ccw, gripper_torque, gripper_speed)
+shoulder = Servo("Shoulder", machine.shoulder_id, machine.shoulder_cw, machine.shoulder_ccw, machine.shoulder_torque, machine.shoulder_speed)
+elbow = Servo("Elbow", machine.elbow_id, machine.elbow_cw, machine.elbow_ccw, machine.elbow_torque, machine.elbow_speed)
+gripper = Servo('Gripper', machine.gripper_id, machine.gripper_cw, machine.gripper_ccw, machine.gripper_torque, machine.gripper_speed)
 
 openGripper()
 time.sleep(2)
