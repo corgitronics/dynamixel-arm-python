@@ -1,30 +1,51 @@
 #!/usr/bin/env python3
+#
+#  Basic functions for a robot arm
+#
 
 from pyax12.connection import Connection
 import time
 import RPi.GPIO as GPIO
 import pyax12.packet as pk
 import pyax12.utils as utils
-import machine as machine
 
 GPIO.setmode(GPIO.BCM)
 
 GPIO.setup(18, GPIO.OUT)
 
+serial_connection = None
+
 port = '/dev/ttyACM0'
 baudrate = 1000000
-timeout = 2000
+timeout = 20
 tx_rx = 18
+
+# Shoulder settings
+shoulder_id = 2
+shoulder_cw = 190
+shoulder_ccw = 810
+shoulder_torque = 150
+shoulder_speed = 400
+
+# Elbow settings
+elbow_id = 3
+elbow_cw = 25
+elbow_ccw = 980
+elbow_torque = 150
+elbow_speed = 500
+
+#Gripper settings
+gripper_id = 4
+gripper_cw = 304
+gripper_ccw = 774
+gripper_torque = 150
+gripper_speed = 200
 
 def initConnection():
     return(Connection(port=port,
-                                   baudrate=baudrate,
-                                   timeout=timeout,
-                                   rpi_gpio=tx_rx))
-
-
-serial_connection = initConnection()
-
+                       baudrate=baudrate,
+                       timeout=timeout,
+                       rpi_gpio=tx_rx))
 
 # defines the basic settings for a servo and provides basic actions
 #   provides some safe defaults, in case those are forgotten
@@ -34,18 +55,18 @@ class Servo:
         self.id = id
         self.cw_limit = cw_imit
         self.ccw_limit = ccw_limit
-        self.max_torque = torque
         self.speed = speed
-        setMaxTorque(self.id, self.max_torque)
-        setCW(self.id, self.cw_limit)
-        setCCW(self.id, self.ccw_limit)
-        setSpeed(self.id, self.speed)
+        self.max_torque = torque
+        self.setMaxTorque(self.max_torque)
+        self.setCW(self.cw_limit)
+        self.setCCW(self.ccw_limit)
+        self.setSpeed(self.speed)
 
 # answer this servo's current settings
     def toString(self):
-        print("name: {}, ID {}, CW {}, CCW {}, Torque {}, Speed{}".format(self.name,self.id, self.cw_limit, self.ccw_limit, self.max_torque, self.speed))
+        print("name: {}, ID:{}, CW:{}, CCW:{}, Torque:{}, Speed:{}".format(self.name,self.id, self.cw_limit, self.ccw_limit, self.max_torque, self.speed))
 
-# answer this servo'c current position
+# answer this servo's current position
     def currentPosition(self):
         serial_connection.get_present_position(self.id)
 
@@ -55,38 +76,44 @@ class Servo:
             speed = self.speed
         serial_connection.goto(self.id, position, speed, False)
 
+    def setMaxTorque(self, maxT):
+        self.max_torque = maxT
+        params = utils.int_to_little_endian_bytes(maxT)
+        serial_connection.write_data(self.id, pk.MAX_TORQUE, params)
 
-def setMaxTorque(dynamixel_id, maxT):
-    params = utils.int_to_little_endian_bytes(maxT)
-    serial_connection.write_data(dynamixel_id, pk.MAX_TORQUE, params)
+    def setCW(self,cw):
+        global serial_connection
+        serial_connection.set_cw_angle_limit(self.id, cw)
 
-def setCW(dynamixel_id,cw):
-    global serial_connection
-    serial_connection.set_cw_angle_limit(dynamixel_id, cw)
+    def setCCW(self,ccw):
+        global serial_connection
+        serial_connection.set_ccw_angle_limit(self.id, ccw)
 
-def setCCW(dynamixel_id,ccw):
-    global serial_connection
-    serial_connection.set_ccw_angle_limit(dynamixel_id, ccw)
+    def setSpeed(self, speed):
+        global serial_connection
+        serial_connection.set_speed(self.id, speed)
 
-def setSpeed(dynamixel_id, speed):
-    global serial_connection
-    serial_connection.set_speed(dynamixel_id, speed)
 
 def openGripper():
-    gripper.goto(machine.gripper_ccw)
+    gripper.goto(gripper_ccw)
 
 def closeGripper():
-    gripper.goto(machine.gripper_cw)
+    gripper.goto(gripper_cw)
+
+def initialize():
+    global serial_connection
+    global shoulder
+    global elbow
+    global gripper
+    serial_connection = initConnection()
+    shoulder = Servo("Shoulder", shoulder_id, shoulder_cw, shoulder_ccw, shoulder_torque, shoulder_speed)
+    elbow = Servo("Elbow", elbow_id, elbow_cw, elbow_ccw, elbow_torque, elbow_speed)
+    gripper = Servo("Gripper", gripper_id, gripper_cw, gripper_ccw, gripper_torque, gripper_speed)
+
+def shutdown():
+    global serial_connection
+    serial_connection.close()
 
 
 
-shoulder = Servo("Shoulder", machine.shoulder_id, machine.shoulder_cw, machine.shoulder_ccw, machine.shoulder_torque, machine.shoulder_speed)
-elbow = Servo("Elbow", machine.elbow_id, machine.elbow_cw, machine.elbow_ccw, machine.elbow_torque, machine.elbow_speed)
-gripper = Servo('Gripper', machine.gripper_id, machine.gripper_cw, machine.gripper_ccw, machine.gripper_torque, machine.gripper_speed)
 
-openGripper()
-time.sleep(2)
-closeGripper()
-
-# Close the serial connection
-serial_connection.close()
