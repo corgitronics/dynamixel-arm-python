@@ -9,9 +9,9 @@ GPIO.setmode(GPIO.BCM)
 
 GPIO.setup(18, GPIO.OUT)
 
-port = '/dev/ttyS0'
+port = '/dev/ttyACM0'
 baudrate = 1000000
-timeout = 3
+timeout = 2000
 tx_rx = 18
 
 dynamixel_id = 3
@@ -41,6 +41,8 @@ time.sleep(2)
 
 # Switch OFF the LED
 serial_connection.write_data(dynamixel_id, pk.LED, 0)
+
+serial_connection.get_present_temperature(dynamixel_id)
 
 # Close the serial connection
 serial_connection.close()

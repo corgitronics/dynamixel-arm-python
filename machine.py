@@ -15,5 +15,6 @@ arm.initialize()
 arm.openGripper()
 time.sleep(2)
 arm.closeGripper()
+arm.freeMovement()
 
 arm.shutdown()

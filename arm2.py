@@ -41,23 +41,38 @@ gripper_ccw = 774
 gripper_torque = 150
 gripper_speed = 200
 
+positionList = {}
+shoulder = None
+elbow = None
+
+
 def initConnection():
     return(Connection(port=port,
                        baudrate=baudrate,
                        timeout=timeout,
                        rpi_gpio=tx_rx))
 
+# defines a set of servo angles that combine to put the arm in a particular position
+class Position:
+    def __init__(self, pos1, pos2):
+        self.shoulderPosition = pos1
+        self.elbowPosition = pos2
+
+
+
 # defines the basic settings for a servo and provides basic actions
 #   provides some safe defaults, in case those are forgotten
 class Servo:
-    def __init__(self, name, id, cw_imit=90, ccw_limit=90, torque=150, speed=150):
+    def __init__(self, name, id, cw_imit=90, ccw_limit=90, torque=150, torqueLimit=150, speed=150):
         self.name = name
         self.id = id
         self.cw_limit = cw_imit
         self.ccw_limit = ccw_limit
         self.speed = speed
         self.max_torque = torque
+        self.torque_limit = torqueLimit
         self.setMaxTorque(self.max_torque)
+        self.setTorqueLimit(torqueLimit)
         self.setCW(self.cw_limit)
         self.setCCW(self.ccw_limit)
         self.setSpeed(self.speed)
@@ -68,7 +83,7 @@ class Servo:
 
 # answer this servo's current position
     def currentPosition(self):
-        serial_connection.get_present_position(self.id)
+        return serial_connection.get_present_position(self.id)
 
 # set the position, default to the servo's preset speed and torque
     def goto(self, position, speed=0):
@@ -81,11 +96,16 @@ class Servo:
         params = utils.int_to_little_endian_bytes(maxT)
         serial_connection.write_data(self.id, pk.MAX_TORQUE, params)
 
-    def setCW(self,cw):
+    def setTorqueLimit(self, maxT):
+        self.torque_limit = maxT
+        params = utils.int_to_little_endian_bytes(maxT)
+        serial_connection.write_data(self.id, pk.TORQUE_LIMIT, params)
+
+    def setCW(self, cw):
         global serial_connection
         serial_connection.set_cw_angle_limit(self.id, cw)
 
-    def setCCW(self,ccw):
+    def setCCW(self, ccw):
         global serial_connection
         serial_connection.set_ccw_angle_limit(self.id, ccw)
 
@@ -93,6 +113,38 @@ class Servo:
         global serial_connection
         serial_connection.set_speed(self.id, speed)
 
+
+def recordPosition(name):
+    global positionList
+    global shoulder
+    global elbow
+    aPosition = Position(shoulder.currentPosition(), elbow.currentPosition())
+    positionList.update({name: aPosition})
+
+def gotoPosition(name):
+    global positionList
+    global shoulder
+    global elbow
+    aPosition = positionList[name]
+    shoulder.goto(aPosition.shoulderPosition, 150)
+    elbow.goto(aPosition.elbowPosition, 150)
+
+
+def freeMovement():
+    global shoulder
+    global elbow
+    shoulder.setMaxTorque(0)
+    shoulder.setTorqueLimit(0)
+    elbow.setMaxTorque(0)
+    elbow.setTorqueLimit(0)
+
+def resumeTorque():
+    global shoulder
+    global elbow
+    shoulder.setMaxTorque(150)
+    shoulder.setTorqueLimit(150)
+    elbow.setMaxTorque(150)
+    elbow.setTorqueLimit(150)
 
 def openGripper():
     gripper.goto(gripper_ccw)
@@ -106,9 +158,9 @@ def initialize():
     global elbow
     global gripper
     serial_connection = initConnection()
-    shoulder = Servo("Shoulder", shoulder_id, shoulder_cw, shoulder_ccw, shoulder_torque, shoulder_speed)
-    elbow = Servo("Elbow", elbow_id, elbow_cw, elbow_ccw, elbow_torque, elbow_speed)
-    gripper = Servo("Gripper", gripper_id, gripper_cw, gripper_ccw, gripper_torque, gripper_speed)
+    shoulder = Servo("shoulder", shoulder_id, shoulder_cw, shoulder_ccw, shoulder_torque, shoulder_speed)
+    elbow = Servo("elbow", elbow_id, elbow_cw, elbow_ccw, elbow_torque, elbow_speed)
+    gripper = Servo("gripper", gripper_id, gripper_cw, gripper_ccw, gripper_torque, gripper_speed)
 
 def shutdown():
     global serial_connection
