@@ -113,6 +113,20 @@ class Servo:
         global serial_connection
         serial_connection.set_speed(self.id, speed)
 
+    def freeMovement(self):
+        params = utils.int_to_little_endian_bytes(0)
+        serial_connection.write_data(self.id, pk.MAX_TORQUE, params)
+        serial_connection.write_data(self.id, pk.TORQUE_LIMIT, params)
+
+    def resumeTorque(self):
+        params = utils.int_to_little_endian_bytes(self.max_torque)
+        serial_connection.write_data(self.id, pk.TORQUE_LIMIT, params)
+        params = utils.int_to_little_endian_bytes(self.torque_limit)
+        serial_connection.write_data(self.id, pk.MAX_TORQUE, params)
+
+    def holdCurrentPosition(self):
+        aPosition = self.currentPosition()
+        self.goto(aPosition, 150)
 
 def recordPosition(name):
     global positionList
@@ -129,22 +143,23 @@ def gotoPosition(name):
     shoulder.goto(aPosition.shoulderPosition, 150)
     elbow.goto(aPosition.elbowPosition, 150)
 
+def holdCurrentPosition():
+    global shoulder
+    global elbow
+    shoulder.holdCurrentPosition()
+    elbow.holdCurrentPosition()
 
 def freeMovement():
     global shoulder
     global elbow
-    shoulder.setMaxTorque(0)
-    shoulder.setTorqueLimit(0)
-    elbow.setMaxTorque(0)
-    elbow.setTorqueLimit(0)
+    shoulder.freeMovement()
+    elbow.freeMovement()
 
 def resumeTorque():
     global shoulder
     global elbow
-    shoulder.setMaxTorque(150)
-    shoulder.setTorqueLimit(150)
-    elbow.setMaxTorque(150)
-    elbow.setTorqueLimit(150)
+    shoulder.resumeTorque()
+    elbow.resumeTorque()
 
 def openGripper():
     gripper.goto(gripper_ccw)
