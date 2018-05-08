@@ -76,6 +76,7 @@ class Servo:
         self.setCW(self.cw_limit)
         self.setCCW(self.ccw_limit)
         self.setSpeed(self.speed)
+        self.goalPosition = 0
 
 # answer this servo's current settings
     def toString(self):
@@ -113,6 +114,9 @@ class Servo:
         global serial_connection
         serial_connection.set_speed(self.id, speed)
 
+    def isAtGoalPosition(self):
+        return self.currentPosition() == self.goalPosition
+
     def freeMovement(self):
         params = utils.int_to_little_endian_bytes(0)
         serial_connection.write_data(self.id, pk.MAX_TORQUE, params)
@@ -128,6 +132,11 @@ class Servo:
         aPosition = self.currentPosition()
         self.goto(aPosition, 150)
 
+def isAtGoalPosition():
+    global shoulder
+    global elbow
+    return (shoulder.isAtGoalPositiion() and elbow.isAtGoalPosition())
+
 def recordPosition(name):
     global positionList
     global shoulder
@@ -142,6 +151,7 @@ def gotoPosition(name):
     aPosition = positionList[name]
     shoulder.goto(aPosition.shoulderPosition, 150)
     elbow.goto(aPosition.elbowPosition, 150)
+    openGripper()
 
 def holdCurrentPosition():
     global shoulder
