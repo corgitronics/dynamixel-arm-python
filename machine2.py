@@ -36,6 +36,7 @@ caseList = []  # define a list of case types to compare against
 aCase = None
 
 arm.initialize()
+arm.openGripper()
 
 
 class CaseType:
@@ -85,7 +86,7 @@ def determineCaseType():
     # determine case type based on height
     global caseList
     global aCase
-    print("determining case type for height {}\n".format(aCase.diameter))
+    print("determining case type for diameter {}\n".format(aCase.diameter))
     for x in caseList:
         #       print("...checking against {}".format(x.name))
         if (aCase.diameter >= x.minDiameter) and (aCase.diameter <= x.maxDiameter):
@@ -98,19 +99,21 @@ def measureCase():
     global aCase
     aCase = Case()  # assign a new case
     arm.closeGripper()  # grab the case
-    time.sleep(1)
+    time.sleep(1.5)
     diameter = arm.gripper.currentPosition() # get the diameter reading
     aCase.diameter = diameter
     determineCaseType()
+    deliverCase()
 
 def deliverCase():
     global aCase
     global arm
     arm.gotoPosition(aCase.type.dropPosition)
     while not arm.isAtGoalPosition():
-        time.sleep(0.2)
+        time.sleep(0.1)
+    time.sleep(0.2)
     arm.openGripper()
-    time.sleep(0.3)
+    time.sleep(1.5)
     arm.gotoPosition("one")
 
 def learn_callback(channel):

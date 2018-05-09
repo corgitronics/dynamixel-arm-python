@@ -80,7 +80,7 @@ class Servo:
 
 # answer this servo's current settings
     def toString(self):
-        print("name: {}, ID:{}, CW:{}, CCW:{}, Torque:{}, Speed:{}".format(self.name,self.id, self.cw_limit, self.ccw_limit, self.max_torque, self.speed))
+        print("name: {}, ID:{}, CW:{}, CCW:{}, Torque:{}, Speed:{}, Goal Position:{}".format(self.name,self.id, self.cw_limit, self.ccw_limit, self.max_torque, self.speed, self.goalPosition))
 
 # answer this servo's current position
     def currentPosition(self):
@@ -88,6 +88,7 @@ class Servo:
 
 # set the position, default to the servo's preset speed and torque
     def goto(self, position, speed=0):
+        self.goalPosition = position
         if (speed == 0):
             speed = self.speed
         serial_connection.goto(self.id, position, speed, False)
@@ -115,7 +116,7 @@ class Servo:
         serial_connection.set_speed(self.id, speed)
 
     def isAtGoalPosition(self):
-        return self.currentPosition() == self.goalPosition
+        return self.goalPosition - 4 <= self.currentPosition() <= self.goalPosition + 4
 
     def freeMovement(self):
         params = utils.int_to_little_endian_bytes(0)
@@ -132,10 +133,12 @@ class Servo:
         aPosition = self.currentPosition()
         self.goto(aPosition, 150)
 
+
 def isAtGoalPosition():
     global shoulder
     global elbow
-    return (shoulder.isAtGoalPositiion() and elbow.isAtGoalPosition())
+    return shoulder.isAtGoalPosition() and elbow.isAtGoalPosition()
+
 
 def recordPosition(name):
     global positionList
@@ -151,7 +154,6 @@ def gotoPosition(name):
     aPosition = positionList[name]
     shoulder.goto(aPosition.shoulderPosition, 150)
     elbow.goto(aPosition.elbowPosition, 150)
-    openGripper()
 
 def holdCurrentPosition():
     global shoulder
