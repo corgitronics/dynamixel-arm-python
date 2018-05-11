@@ -86,6 +86,7 @@ def determineCaseType():
     # determine case type based on height
     global caseList
     global aCase
+    aCase.type = None
     print("determining case type for diameter {}\n".format(aCase.diameter))
     for x in caseList:
         #       print("...checking against {}".format(x.name))
@@ -103,7 +104,11 @@ def measureCase():
     diameter = arm.gripper.currentPosition() # get the diameter reading
     aCase.diameter = diameter
     determineCaseType()
-    deliverCase()
+    if aCase.type is None:
+        print("Unknown type for: {}".format(aCase.diameter))
+        arm.openGripper
+    else:
+        deliverCase()
 
 def deliverCase():
     global aCase
@@ -194,7 +199,7 @@ GPIO.add_event_detect(POSITION_4, GPIO.FALLING, callback=position4_callback, bou
 
 # -- build the list of case types
 a9mmCase = CaseType(1, '9mm', '9mm', 0, 18.4, 19.5, 480, 495, "two")
-a40swCase = CaseType(2, '40 S&W', '40sw', 5, 20.9, 22.0, 500, 509, "three")
+a40swCase = CaseType(2, '40 S&W', '40sw', 5, 20.9, 22.0, 496, 509, "three")
 a45Case = CaseType(3, '45 ACP', '45acp', 10, 22.1, 23.5, 511, 520, "four")
 # a10mmCase = CaseType(4, '10mm', '10mm', 99, 24.5, 25.5, 4)
 # a380Case = CaseType(5, '380 ACP', '380', 16, 16.9, 17.8, 5)

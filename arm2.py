@@ -5,6 +5,7 @@
 
 from pyax12.connection import Connection
 import time
+import jsonpickle
 import RPi.GPIO as GPIO
 import pyax12.packet as pk
 import pyax12.utils as utils
@@ -19,6 +20,8 @@ port = '/dev/ttyACM0'
 baudrate = 1000000
 timeout = 20
 tx_rx = 18
+
+positionsFile = "positions.js"
 
 # Shoulder settings
 shoulder_id = 2
@@ -53,7 +56,7 @@ def initConnection():
                        rpi_gpio=tx_rx))
 
 # defines a set of servo angles that combine to put the arm in a particular position
-class Position:
+class Position(object):
     def __init__(self, pos1, pos2):
         self.shoulderPosition = pos1
         self.elbowPosition = pos2
@@ -146,13 +149,16 @@ def recordPosition(name):
     global elbow
     aPosition = Position(shoulder.currentPosition(), elbow.currentPosition())
     positionList.update({name: aPosition})
+    f = open(positionsFile, 'w')
+    json_obj = jsonpickle.encode(positionList)
+    f.write(json_obj)
 
 def gotoPosition(name):
     global positionList
     global shoulder
     global elbow
     aPosition = positionList[name]
-    shoulder.goto(aPosition.shoulderPosition, 150)
+    shoulder.goto(aPosition.shoulderPosition, 50)
     elbow.goto(aPosition.elbowPosition, 150)
 
 def holdCurrentPosition():
@@ -184,10 +190,18 @@ def initialize():
     global shoulder
     global elbow
     global gripper
+    global positionList
     serial_connection = initConnection()
     shoulder = Servo("shoulder", shoulder_id, shoulder_cw, shoulder_ccw, shoulder_torque, shoulder_speed)
     elbow = Servo("elbow", elbow_id, elbow_cw, elbow_ccw, elbow_torque, elbow_speed)
     gripper = Servo("gripper", gripper_id, gripper_cw, gripper_ccw, gripper_torque, gripper_speed)
+    try:
+        with open(positionsFile) as json_data:
+            json_str = json_data.read()
+            positionList = jsonpickle.decode(json_str)
+            json_data.close()
+    except:
+        print("no positions file: {}".format(positionsFile))
 
 def shutdown():
     global serial_connection
