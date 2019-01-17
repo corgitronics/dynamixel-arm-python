@@ -1,5 +1,6 @@
 # dynamixel-arm-python
-Using Dynamixel AX-12A servos for a simple robotic arm
+Using Dynamixel AX-12A servos for a simple robotic arm.
+
 This code supports the video demo on Youtube:  https://youtu.be/M20P-k8dF4g
 
 This software leverages a couple of other libraries, so you'll also need:
