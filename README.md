@@ -10,6 +10,10 @@ This software leverages a couple of other libraries, so you'll also need:
 
 _( according to my commit comments, these should be fully functioning versions)_
 
+## arm-1.py
+* Demonstrates very basic commands
+* Just blinks the LEDs to confirm communication is working
+
 ## machine.py 
 * basic arm movements
 * can learn and playback positions using buttons
